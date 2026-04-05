@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masters Hub</title>
+  <style>
+    :root {
+      --bg-primary:   #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card:      #1e293b;
+      --bg-hover:     #2d3f55;
+      --text-primary: #f1f5f9;
+      --text-muted:   #94a3b8;
+      --border:       #2d3f55;
+      --blue:   #3b82f6;
+      --teal:   #14b8a6;
+      --purple: #8b5cf6;
+      --orange: #f97316;
+      --green:  #22c55e;
+      --red:    #ef4444;
+      --yellow: #eab308;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+    .sidebar-logo {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo h1 { font-size: 1rem; color: var(--blue); font-weight: 700; letter-spacing: -0.02em; }
+    .sidebar-logo p  { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+    .nav-section { padding: 14px 12px 6px; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer; transition: all 0.15s;
+      color: var(--text-muted); font-size: 0.82rem;
+      border-left: 3px solid transparent;
+      user-select: none;
+    }
+    .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .nav-item.active { background: rgba(59,130,246,0.1); color: var(--blue); border-left-color: var(--blue); }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* ── MAIN ───────────────────────────────── */
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
+
+    .page { display: none; flex: 1; padding: 26px 28px; flex-direction: column; min-height: 0; }
+    .page.active { display: flex; }
+
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 22px; flex-shrink: 0;
+    }
+    .page-title { font-size: 1.4rem; font-weight: 700; }
+    .page-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── BUTTONS ────────────────────────────── */
+    .btn {
+      padding: 7px 15px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 0.8rem; font-weight: 500;
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-danger  { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.25); }
+    .btn-danger:hover  { background: rgba(239,68,68,.22); }
+    .btn-ghost   { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-ghost:hover   { background: #3a4f68; }
+    .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+
+    /* ── KANBAN ─────────────────────────────── */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .kanban-col {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 170px);
+      overflow: hidden;
+    }
+    .col-header {
+      padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .col-title { font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .col-todo      .col-dot { background: var(--text-muted); }
+    .col-inprogress .col-dot { background: var(--blue); }
+    .col-review    .col-dot { background: var(--yellow); }
+    .col-done      .col-dot { background: var(--green); }
+    .col-badge {
+      background: var(--bg-hover); color: var(--text-muted);
+      font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;
+    }
+    .col-body {
+      padding: 10px; flex: 1; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 8px;
+      min-height: 60px;
+    }
+    .col-body.drag-over { background: rgba(59,130,246,.06); }
+    .col-add-btn {
+      margin: 6px 10px 10px;
+      padding: 7px;
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--text-muted); cursor: pointer;
+      font-size: 0.75rem; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      flex-shrink: 0;
+    }
+    .col-add-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,.05); }
+
+    /* ── TASK CARD ──────────────────────────── */
+    .task-card {
+      background: var(--bg-primary);
+      border-radius: 8px; padding: 11px 12px;
+      border: 1px solid var(--border);
+      cursor: grab; transition: all 0.15s;
+    }
+    .task-card:hover { border-color: var(--blue); box-shadow: 0 2px 12px rgba(59,130,246,.15); transform: translateY(-1px); }
+    .task-card.dragging { opacity: 0.4; cursor: grabbing; }
+    .task-card-top { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; }
+    .task-card-title { font-size: 0.82rem; font-weight: 500; line-height: 1.4; }
+    .task-prio { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .prio-high   { background: var(--red); }
+    .prio-medium { background: var(--yellow); }
+    .prio-low    { background: var(--green); }
+    .task-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+    .task-footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .task-tag {
+      font-size: 0.67rem; padding: 2px 7px; border-radius: 20px; font-weight: 500;
+    }
+    .tag-0 { background: rgba(59,130,246,.15);  color: var(--blue); }
+    .tag-1 { background: rgba(139,92,246,.15);  color: var(--purple); }
+    .tag-2 { background: rgba(20,184,166,.15);  color: var(--teal); }
+    .tag-3 { background: rgba(249,115,22,.15);  color: var(--orange); }
+    .tag-4 { background: rgba(34,197,94,.15);   color: var(--green); }
+    .task-due { font-size: 0.67rem; color: var(--text-muted); }
+    .task-due.overdue { color: var(--red); }
+    .task-actions { display: none; gap: 5px; margin-top: 7px; }
+    .task-card:hover .task-actions { display: flex; }
+    .act-btn {
+      background: var(--bg-hover); border: none; color: var(--text-muted);
+      cursor: pointer; padding: 3px 8px; border-radius: 4px;
+      font-size: 0.68rem; transition: all 0.15s;
+    }
+    .act-btn:hover { color: var(--text-primary); }
+    .act-btn.del:hover { color: var(--red); background: rgba(239,68,68,.1); }
+
+    /* ── MODAL ──────────────────────────────── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.75); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-secondary); border-radius: 14px;
+      padding: 24px; width: 460px; max-width: 95vw;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .modal h2 { font-size: 1rem; margin-bottom: 18px; }
+    .fg { margin-bottom: 14px; }
+    .fg label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; }
+    .fg input, .fg select, .fg textarea {
+      width: 100%;
+      background: var(--bg-primary); border: 1px solid var(--border);
+      border-radius: 7px; padding: 7px 10px;
+      color: var(--text-primary); font-size: 0.82rem; font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--blue); }
+    .fg textarea { resize: vertical; min-height: 70px; }
+    .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+    /* ── CALENDAR ───────────────────────────── */
+    .cal-layout { display: grid; grid-template-columns: 1fr 280px; gap: 18px; flex: 1; min-height: 0; }
+    .cal-main {
+      background: var(--bg-secondary); border-radius: 12px;
+      border: 1px solid var(--border); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .cal-nav h2 { font-size: 1rem; }
+    .cal-nav-btn {
+      background: var(--bg-hover); border: none; color: var(--text-primary);
+      cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 1.1rem;
+      transition: all 0.15s;
+    }
+    .cal-nav-btn:hover { background: #3a4f68; }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      overflow-y: auto; flex: 1;
+    }
+    .cal-dh {
+      padding: 8px; text-align: center;
+      font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
+    }
+    .cal-day {
+      min-height: 88px; padding: 7px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .cal-day:hover { background: var(--bg-hover); }
+    .cal-day.other { opacity: .35; }
+    .cal-day.today { background: rgba(59,130,246,.07); }
+    .cal-day-num {
+      font-size: 0.8rem; font-weight: 500;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin-bottom: 3px;
+    }
+    .cal-day.today .cal-day-num { background: var(--blue); color: #fff; }
+    .cal-task-pill {
+      font-size: 0.62rem; padding: 2px 5px;
+      border-radius: 3px; margin-bottom: 2px;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    .pill-todo      { background: rgba(148,163,184,.12); color: var(--text-muted); }
+    .pill-inprogress{ background: rgba(59,130,246,.15);  color: var(--blue); }
+    .pill-review    { background: rgba(234,179,8,.15);   color: var(--yellow); }
+    .pill-done      { background: rgba(34,197,94,.15);   color: var(--green); }
+
+    .cal-sidebar { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+    .upcoming-panel {
+      background: var(--bg-secondary); border-radius: 12px;
+      border: 1px solid var(--border); padding: 16px; flex: 1;
+    }
+    .upcoming-panel h3 { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .upcoming-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .upcoming-item:last-child { border-bottom: none; }
+    .up-badge {
+      min-width: 38px; height: 42px; background: var(--bg-hover);
+      border-radius: 7px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .up-day   { font-size: 1rem; font-weight: 700; line-height: 1; }
+    .up-month { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; }
+    .up-info h4  { font-size: 0.78rem; font-weight: 500; }
+    .up-info p   { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── SPORT PAGES ─────────────────────────── */
+    /* shared card */
+    .sp-card { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .sp-hd { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sp-body { flex: 1; overflow-y: auto; }
+
+    /* Racing: two cards side by side, fill height */
+    .racing-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+
+    /* Golf: event banner + two panels below */
+    .golf-layout  { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+    .golf-panels  { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+    .event-banner { background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .ev-name { font-size: .95rem; font-weight: 600; }
+    .ev-meta { font-size: .75rem; color: var(--text-muted); margin-top: 3px; }
+
+    /* Odds API key row */
+    #odds-key-row { display: none; padding: 10px 16px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; margin-bottom: 14px; }
+    #odds-key-row.open { display: flex; }
+    #odds-key-input { flex: 1; min-width: 180px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: var(--text-primary); font-size: .78rem; font-family: inherit; }
+    #odds-key-input:focus { outline: none; border-color: var(--blue); }
+
+    /* sub-panel header inside a card */
+    .panel-hd { padding: 7px 12px; background: var(--bg-primary); font-size: .65rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .split-body { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; overflow: hidden; }
+    .split-panel { display: flex; flex-direction: column; overflow-y: auto; }
+    .split-panel + .split-panel { border-left: 1px solid var(--border); }
+
+    /* Baseball: single full-width card */
+    .baseball-layout { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+    @media (max-width: 900px) {
+      .racing-layout { grid-template-columns: 1fr; }
+      .golf-panels   { grid-template-columns: 1fr; }
+      .split-body    { grid-template-columns: 1fr; }
+    }
+    .sport-card {
+      background: var(--bg-secondary); border-radius: 12px;
+      border: 1px solid var(--border); display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .sport-card.wide { grid-column: span 2; }
+    .sport-card-hd {
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sport-title { font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .sport-body  { flex: 1; overflow-y: auto; }
+
+    .race-badge {
+      background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.25);
+      border-radius: 8px; padding: 6px 12px; text-align: right;
+    }
+    .race-badge .rb-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .race-badge .rb-name  { font-size: 0.78rem; font-weight: 600; color: var(--blue); }
+    .race-badge .rb-date  { font-size: 0.68rem; color: var(--text-muted); }
+
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .data-table th {
+      padding: 7px 12px; text-align: left;
+      font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      background: var(--bg-primary); position: sticky; top: 0;
+    }
+    .data-table td { padding: 8px 12px; border-top: 1px solid var(--border); }
+    .data-table tr:hover td { background: var(--bg-hover); }
+
+    /* highlighted rows */
+    .row-me td     { background: rgba(59,130,246,.08) !important; }
+    .row-me:hover td { background: rgba(59,130,246,.14) !important; }
+    .row-arrow td  { background: rgba(249,115,22,.07) !important; }
+    .row-arrow:hover td { background: rgba(249,115,22,.13) !important; }
+    .row-sox td    { background: rgba(189,48,57,.1) !important; }
+    .row-sox:hover td  { background: rgba(189,48,57,.18) !important; }
+    .row-sox .tn   { color: #e05c6b; font-weight: 600; }
+
+    .pos-n { font-weight: 700; color: var(--text-muted); }
+    .pts-n { font-weight: 600; }
+    .tag-arrow {
+      font-size: 0.62rem; background: rgba(249,115,22,.2); color: var(--orange);
+      padding: 1px 6px; border-radius: 10px; margin-left: 5px;
+    }
+
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 30px; gap: 10px; color: var(--text-muted); font-size: 0.8rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    .sport-note { padding: 8px 12px; font-size: 0.68rem; color: var(--text-muted); border-top: 1px solid var(--border); }
+    .sport-note a { color: var(--blue); }
+
+    /* ── BACKLOG ────────────────────────────── */
+    .backlog-empty { text-align: center; padding: 70px 20px; color: var(--text-muted); }
+    .backlog-empty h3 { font-size: 0.95rem; margin-bottom: 6px; }
+    .backlog-empty p  { font-size: 0.82rem; }
+
+    .week-arc { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; }
+    .arc-hd {
+      padding: 13px 16px; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .arc-hd:hover { background: var(--bg-hover); }
+    .arc-hd h3 { font-size: 0.88rem; font-weight: 600; }
+    .arc-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .arc-chevron { color: var(--text-muted); font-size: 1.1rem; transition: transform 0.2s; }
+    .week-arc.open .arc-chevron { transform: rotate(90deg); }
+    .arc-body { display: none; padding: 4px 10px 10px; }
+    .week-arc.open .arc-body { display: block; }
+    .arc-task {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 6px; border-radius: 6px;
+    }
+    .arc-task:hover { background: var(--bg-hover); }
+    .check-icon { width: 16px; height: 16px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .arc-task h4 { font-size: 0.78rem; }
+    .arc-task p  { font-size: 0.67rem; color: var(--text-muted); margin-top: 1px; }
+
+    /* ── SCROLLBAR ──────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 1080px) {
+      .kanban-board { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 820px) {
+      .cal-layout { grid-template-columns: 1fr; }
+      .cal-sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Masters Hub</h1>
+    <p>Academic Dashboard</p>
+  </div>
+  <div class="nav-section">Workspace</div>
+  <div class="nav-item active" onclick="showPage('kanban')" id="nav-kanban">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/>
+    </svg>
+    Week Board
+  </div>
+  <div class="nav-item" onclick="showPage('calendar')" id="nav-calendar">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Calendar
+  </div>
+  <div class="nav-section">Sports</div>
+  <div class="nav-item" onclick="showPage('racing')" id="nav-racing">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M3 12h3l2-6h8l2 6h3"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/><path d="M3 12l1-4M21 12l-1-4"/>
+    </svg>
+    Racing
+  </div>
+  <div class="nav-item" onclick="showPage('golf')" id="nav-golf">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="17" r="3"/><line x1="12" y1="3" x2="12" y2="14"/><path d="M12 3l5 3-5 3"/>
+    </svg>
+    Golf
+  </div>
+  <div class="nav-item" onclick="showPage('baseball')" id="nav-baseball">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="9"/><path d="M5.5 5.5c1.5 1 2.5 3.5 2.5 6.5s-1 5.5-2.5 6.5"/><path d="M18.5 5.5C17 6.5 16 9 16 12s1 5.5 2.5 6.5"/>
+    </svg>
+    Baseball
+  </div>
+  <div class="nav-section">Work</div>
+  <div class="nav-item" onclick="showPage('backlog')" id="nav-backlog">
+    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>
+    </svg>
+    Backlog
+  </div>
+</nav>
+
+<!-- ══ MAIN ═════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- ─── KANBAN PAGE ─────────────────────────────── -->
+  <div id="page-kanban" class="page active">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Week Board</h1>
+        <p class="page-subtitle" id="week-range">–</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="openAdd('todo')">+ Add Task</button>
+        <button class="btn btn-danger"  onclick="openCloseWeek()">✕ Close Week</button>
+      </div>
+    </div>
+
+    <div class="kanban-board">
+      <!-- To Do -->
+      <div class="kanban-col col-todo" ondragover="dOver(event)" ondrop="dDrop(event,'todo')" ondragleave="dLeave(event)">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot"></div>To Do</div>
+          <span class="col-badge" id="cnt-todo">0</span>
+        </div>
+        <div class="col-body" id="col-todo"></div>
+        <button class="col-add-btn" onclick="openAdd('todo')">+ Add task</button>
+      </div>
+      <!-- In Progress -->
+      <div class="kanban-col col-inprogress" ondragover="dOver(event)" ondrop="dDrop(event,'inprogress')" ondragleave="dLeave(event)">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot"></div>In Progress</div>
+          <span class="col-badge" id="cnt-inprogress">0</span>
+        </div>
+        <div class="col-body" id="col-inprogress"></div>
+        <button class="col-add-btn" onclick="openAdd('inprogress')">+ Add task</button>
+      </div>
+      <!-- Review -->
+      <div class="kanban-col col-review" ondragover="dOver(event)" ondrop="dDrop(event,'review')" ondragleave="dLeave(event)">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot"></div>Review</div>
+          <span class="col-badge" id="cnt-review">0</span>
+        </div>
+        <div class="col-body" id="col-review"></div>
+        <button class="col-add-btn" onclick="openAdd('review')">+ Add task</button>
+      </div>
+      <!-- Done -->
+      <div class="kanban-col col-done" ondragover="dOver(event)" ondrop="dDrop(event,'done')" ondragleave="dLeave(event)">
+        <div class="col-header">
+          <div class="col-title"><div class="col-dot"></div>Done</div>
+          <span class="col-badge" id="cnt-done">0</span>
+        </div>
+        <div class="col-body" id="col-done"></div>
+        <button class="col-add-btn" onclick="openAdd('done')">+ Add task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CALENDAR PAGE ───────────────────────────── -->
+  <div id="page-calendar" class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Calendar</h1>
+        <p class="page-subtitle">Track deadlines and due dates</p>
+      </div>
+      <button class="btn btn-primary" onclick="openAdd('todo')">+ Add Task</button>
+    </div>
+    <div class="cal-layout">
+      <div class="cal-main">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <h2 id="cal-label"></h2>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid">
+          <div class="cal-dh">Sun</div><div class="cal-dh">Mon</div>
+          <div class="cal-dh">Tue</div><div class="cal-dh">Wed</div>
+          <div class="cal-dh">Thu</div><div class="cal-dh">Fri</div>
+          <div class="cal-dh">Sat</div>
+        </div>
+      </div>
+      <div class="cal-sidebar">
+        <div class="upcoming-panel">
+          <h3>Upcoming Deadlines</h3>
+          <div id="upcoming-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── RACING PAGE ─────────────────────────────── -->
+  <div id="page-racing" class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Racing</h1>
+        <p class="page-subtitle">Formula 1 &amp; IndyCar standings</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadRacing()">&#8635; Refresh</button>
+    </div>
+    <div class="racing-layout">
+
+      <!-- F1 -->
+      <div class="sp-card">
+        <div class="sp-hd">
+          <div class="sport-title">🏎️ Formula 1 — Drivers</div>
+          <div class="race-badge">
+            <div class="rb-label">Next Race</div>
+            <div class="rb-name" id="f1-rname">–</div>
+            <div class="rb-date" id="f1-rdate"></div>
+          </div>
+        </div>
+        <div class="sp-body" id="f1-body"><div class="spinner-wrap"><div class="spin"></div>Loading…</div></div>
+      </div>
+
+      <!-- IndyCar -->
+      <div class="sp-card">
+        <div class="sp-hd">
+          <div class="sport-title">🏁 IndyCar — Drivers</div>
+          <div class="race-badge">
+            <div class="rb-label">Next Race</div>
+            <div class="rb-name" id="ic-rname">–</div>
+            <div class="rb-date" id="ic-rdate"></div>
+          </div>
+        </div>
+        <div class="sp-body" id="ic-body"><div class="spinner-wrap"><div class="spin"></div>Loading…</div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── GOLF PAGE ──────────────────────────────── -->
+  <div id="page-golf" class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Golf</h1>
+        <p class="page-subtitle">World rankings &amp; next tournament odds</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="toggleOddsKey()">🎲 Odds Key</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadGolf()">&#8635; Refresh</button>
+      </div>
+    </div>
+
+    <!-- Event Banner -->
+    <div class="event-banner" style="margin-bottom:14px">
+      <div>
+        <div class="ev-name" id="pga-ename">Loading tournament…</div>
+        <div class="ev-meta" id="pga-edate"></div>
+      </div>
+      <a href="https://www.pgatour.com/schedule" target="_blank" class="btn btn-ghost btn-sm">PGATour.com ↗</a>
+    </div>
+
+    <!-- Odds API key row -->
+    <div id="odds-key-row">
+      <span style="font-size:.72rem;color:var(--text-muted);white-space:nowrap">
+        Free key (500 req/mo) at
+        <a href="https://the-odds-api.com" target="_blank" style="color:var(--blue)">the-odds-api.com</a>:
+      </span>
+      <input id="odds-key-input" type="text" placeholder="Paste your Odds API key…">
+      <button class="btn btn-primary btn-sm" onclick="saveOddsKey()">Save &amp; Load</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearOddsKey()">Clear</button>
+    </div>
+
+    <!-- OWGR + Odds panels -->
+    <div class="golf-panels" style="flex:1;min-height:0">
+      <div class="sp-card">
+        <div class="panel-hd">Official World Golf Ranking</div>
+        <div class="sp-body" id="owgr-body"><div class="spinner-wrap"><div class="spin"></div>Loading…</div></div>
+      </div>
+      <div class="sp-card">
+        <div class="panel-hd">Next Tournament — Win Odds</div>
+        <div class="sp-body" id="odds-body"><div class="spinner-wrap"><div class="spin"></div>Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BASEBALL PAGE ─────────────────────────── -->
+  <div id="page-baseball" class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Baseball</h1>
+        <p class="page-subtitle">AL East division standings</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:.7rem;color:var(--text-muted)" id="mlb-updated"></span>
+        <button class="btn btn-ghost btn-sm" onclick="loadBaseball()">&#8635; Refresh</button>
+      </div>
+    </div>
+    <div class="baseball-layout">
+      <div class="sp-card">
+        <div class="sp-hd">
+          <div class="sport-title">⚾ MLB — AL East Division</div>
+        </div>
+        <div class="sp-body" id="mlb-body"><div class="spinner-wrap"><div class="spin"></div>Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BACKLOG PAGE ─────────────────────────────── -->
+  <div id="page-backlog" class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Backlog</h1>
+        <p class="page-subtitle">Archived completed weeks</p>
+      </div>
+    </div>
+    <div id="backlog-list"></div>
+  </div>
+
+</main>
+
+<!-- ══ MODALS ════════════════════════════════════════ -->
+
+<!-- Add Task -->
+<div class="overlay" id="m-add">
+  <div class="modal">
+    <h2>Add Task</h2>
+    <div class="fg"><label>Title *</label><input id="a-title" placeholder="e.g. Write literature review"></div>
+    <div class="fg"><label>Description</label><textarea id="a-desc" placeholder="Optional notes…"></textarea></div>
+    <div class="fg-row">
+      <div class="fg"><label>Due Date</label><input type="date" id="a-due"></div>
+      <div class="fg"><label>Priority</label>
+        <select id="a-prio"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select>
+      </div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Course / Subject</label><input id="a-tag" placeholder="e.g. Statistics"></div>
+      <div class="fg"><label>Status</label>
+        <select id="a-status">
+          <option value="todo">To Do</option>
+          <option value="inprogress">In Progress</option>
+          <option value="review">Review</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('m-add')">Cancel</button>
+      <button class="btn btn-primary" onclick="addTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Task -->
+<div class="overlay" id="m-edit">
+  <div class="modal">
+    <h2>Edit Task</h2>
+    <input type="hidden" id="e-id">
+    <div class="fg"><label>Title *</label><input id="e-title"></div>
+    <div class="fg"><label>Description</label><textarea id="e-desc"></textarea></div>
+    <div class="fg-row">
+      <div class="fg"><label>Due Date</label><input type="date" id="e-due"></div>
+      <div class="fg"><label>Priority</label>
+        <select id="e-prio"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select>
+      </div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Course / Subject</label><input id="e-tag"></div>
+      <div class="fg"><label>Status</label>
+        <select id="e-status">
+          <option value="todo">To Do</option>
+          <option value="inprogress">In Progress</option>
+          <option value="review">Review</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('m-edit')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Close Week Confirm -->
+<div class="overlay" id="m-closeweek">
+  <div class="modal">
+    <h2>Close This Week?</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);line-height:1.6">
+      All <strong style="color:var(--green)">Done</strong> tasks will be archived to your Backlog.
+      Tasks still in To Do, In Progress, or Review will carry over to next week.
+    </p>
+    <div id="done-preview" style="background:var(--bg-primary);border-radius:8px;padding:10px 12px;margin:12px 0;max-height:140px;overflow-y:auto;font-size:.78rem"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('m-closeweek')">Cancel</button>
+      <button class="btn btn-danger" onclick="closeWeek()">Archive &amp; Close Week</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE + PERSISTENCE
+// ═══════════════════════════════════════════════
+let S = { tasks: [], backlog: [], weekStart: null };
+
+function load() {
+  try {
+    const raw = localStorage.getItem('mastersHub2');
+    if (raw) S = JSON.parse(raw);
+  } catch(e) {}
+  if (!S.weekStart) S.weekStart = weekOf(new Date()).toISOString();
+  if (!S.backlog)   S.backlog = [];
+  if (!S.tasks)     S.tasks   = [];
+}
+function save() { localStorage.setItem('mastersHub2', JSON.stringify(S)); }
+
+function weekOf(d) {
+  const x = new Date(d); x.setHours(0,0,0,0);
+  const dow = x.getDay();
+  x.setDate(x.getDate() - dow + (dow === 0 ? -6 : 1)); // Monday
+  return x;
+}
+function weekEnd(ws) { const e = new Date(ws); e.setDate(e.getDate()+6); return e; }
+function fmtDate(d)  { return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''; }
+function fmtShort(d) { return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''; }
+function isOver(d)   { return d && new Date(d) < new Date(); }
+function esc(s)      { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function hash(s)     { let h=0; for(let c of (s||'')) h=(h<<5)-h+c.charCodeAt(0); return Math.abs(h)%5; }
+function uid()       { return 't_'+Date.now()+'_'+Math.random().toString(36).slice(2); }
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+const PAGES = ['kanban','calendar','racing','golf','baseball','backlog'];
+function showPage(p) {
+  PAGES.forEach(x => {
+    document.getElementById('page-'+x).classList.toggle('active', x===p);
+    document.getElementById('nav-'+x).classList.toggle('active', x===p);
+  });
+  if (p==='kanban')   renderKanban();
+  if (p==='calendar') renderCalendar();
+  if (p==='racing')   loadRacing();
+  if (p==='golf')     loadGolf();
+  if (p==='baseball') loadBaseball();
+  if (p==='backlog')  renderBacklog();
+}
+
+// ═══════════════════════════════════════════════
+//  KANBAN
+// ═══════════════════════════════════════════════
+function renderKanban() {
+  const ws = new Date(S.weekStart);
+  const we = weekEnd(ws);
+  document.getElementById('week-range').textContent = fmtShort(ws)+' – '+fmtShort(we);
+
+  ['todo','inprogress','review','done'].forEach(st => {
+    const tasks = S.tasks.filter(t => t.status === st);
+    document.getElementById('cnt-'+st).textContent = tasks.length;
+    const col = document.getElementById('col-'+st);
+    col.innerHTML = '';
+    tasks.forEach(t => col.appendChild(makeCard(t)));
+  });
+}
+
+function makeCard(t) {
+  const card = document.createElement('div');
+  card.className = 'task-card';
+  card.draggable = true;
+  card.dataset.id = t.id;
+  card.ondragstart = e => { e.dataTransfer.setData('tid', t.id); card.classList.add('dragging'); };
+  card.ondragend   = () => card.classList.remove('dragging');
+
+  const dueStr = t.dueDate ? fmtShort(t.dueDate) : '';
+  const overdue = isOver(t.dueDate) && t.status !== 'done';
+
+  card.innerHTML = `
+    <div class="task-card-top">
+      <div class="task-card-title">${esc(t.title)}</div>
+      <div class="task-prio prio-${t.priority||'medium'}"></div>
+    </div>
+    ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
+    <div class="task-footer">
+      ${t.tag ? `<span class="task-tag tag-${hash(t.tag)}">${esc(t.tag)}</span>` : ''}
+      ${dueStr ? `<span class="task-due${overdue?' overdue':''}">📅 ${dueStr}</span>` : ''}
+    </div>
+    <div class="task-actions">
+      <button class="act-btn" onclick="openEdit('${t.id}')">Edit</button>
+      <button class="act-btn del" onclick="delTask('${t.id}')">Delete</button>
+    </div>`;
+  return card;
+}
+
+// Drag & Drop
+function dOver(e)  { e.preventDefault(); e.currentTarget.querySelector('.col-body').classList.add('drag-over'); }
+function dLeave(e) { e.currentTarget.querySelector('.col-body').classList.remove('drag-over'); }
+function dDrop(e, status) {
+  e.preventDefault();
+  const id = e.dataTransfer.getData('tid');
+  const t  = S.tasks.find(x => x.id === id);
+  if (t) { t.status = status; save(); renderKanban(); }
+  e.currentTarget.querySelector('.col-body').classList.remove('drag-over');
+}
+
+// ─── Add Task ───────────────────────────────────
+let _addStatus = 'todo';
+function openAdd(status) {
+  _addStatus = status;
+  document.getElementById('a-title').value = '';
+  document.getElementById('a-desc').value  = '';
+  document.getElementById('a-due').value   = '';
+  document.getElementById('a-prio').value  = 'medium';
+  document.getElementById('a-tag').value   = '';
+  document.getElementById('a-status').value = status;
+  openModal('m-add');
+  setTimeout(() => document.getElementById('a-title').focus(), 50);
+}
+function addTask() {
+  const title = document.getElementById('a-title').value.trim();
+  if (!title) { document.getElementById('a-title').style.borderColor='var(--red)'; return; }
+  document.getElementById('a-title').style.borderColor = '';
+  S.tasks.push({
+    id: uid(), title,
+    description: document.getElementById('a-desc').value.trim(),
+    dueDate:  document.getElementById('a-due').value,
+    priority: document.getElementById('a-prio').value,
+    tag:      document.getElementById('a-tag').value.trim(),
+    status:   document.getElementById('a-status').value,
+    created:  new Date().toISOString()
+  });
+  save(); closeModal('m-add'); renderKanban();
+  if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+}
+
+// ─── Edit Task ──────────────────────────────────
+function openEdit(id) {
+  const t = S.tasks.find(x => x.id === id); if (!t) return;
+  document.getElementById('e-id').value    = id;
+  document.getElementById('e-title').value = t.title;
+  document.getElementById('e-desc').value  = t.description || '';
+  document.getElementById('e-due').value   = t.dueDate || '';
+  document.getElementById('e-prio').value  = t.priority || 'medium';
+  document.getElementById('e-tag').value   = t.tag || '';
+  document.getElementById('e-status').value= t.status;
+  openModal('m-edit');
+}
+function saveEdit() {
+  const id = document.getElementById('e-id').value;
+  const t  = S.tasks.find(x => x.id === id); if (!t) return;
+  const title = document.getElementById('e-title').value.trim();
+  if (!title) return;
+  t.title = title;
+  t.description = document.getElementById('e-desc').value.trim();
+  t.dueDate  = document.getElementById('e-due').value;
+  t.priority = document.getElementById('e-prio').value;
+  t.tag      = document.getElementById('e-tag').value.trim();
+  t.status   = document.getElementById('e-status').value;
+  save(); closeModal('m-edit'); renderKanban();
+  if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+}
+function delTask(id) { S.tasks = S.tasks.filter(x => x.id !== id); save(); renderKanban(); }
+
+// ─── Close Week ─────────────────────────────────
+function openCloseWeek() {
+  const done = S.tasks.filter(t => t.status === 'done');
+  const preview = document.getElementById('done-preview');
+  if (done.length === 0) {
+    preview.innerHTML = '<span style="color:var(--text-muted)">No completed tasks to archive yet.</span>';
+  } else {
+    preview.innerHTML = done.map(t =>
+      `<div style="padding:3px 0;display:flex;align-items:center;gap:6px">
+         <span style="color:var(--green)">✓</span> ${esc(t.title)}
+       </div>`
+    ).join('');
+  }
+  openModal('m-closeweek');
+}
+function closeWeek() {
+  const ws   = new Date(S.weekStart);
+  const we   = weekEnd(ws);
+  const done = S.tasks.filter(t => t.status === 'done');
+  if (done.length > 0) {
+    S.backlog.unshift({
+      id: 'w_'+Date.now(),
+      weekStart: ws.toISOString(),
+      weekEnd:   we.toISOString(),
+      label: 'Week of '+fmtShort(ws),
+      tasks: done
+    });
+  }
+  S.tasks = S.tasks.filter(t => t.status !== 'done');
+  const next = new Date(ws); next.setDate(next.getDate()+7);
+  S.weekStart = next.toISOString();
+  save(); closeModal('m-closeweek'); renderKanban();
+}
+
+// ─── Modal Helpers ──────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target===o) o.classList.remove('active'); }));
+document.getElementById('a-title').addEventListener('keydown', e => { if (e.key==='Enter') addTask(); });
+
+// ═══════════════════════════════════════════════
+//  CALENDAR
+// ═══════════════════════════════════════════════
+let calDate = new Date();
+function renderCalendar() { drawCal(); drawUpcoming(); }
+function changeMonth(d)   { calDate.setMonth(calDate.getMonth()+d); drawCal(); }
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function drawCal() {
+  document.getElementById('cal-label').textContent = MONTHS[calDate.getMonth()]+' '+calDate.getFullYear();
+  const grid  = document.getElementById('cal-grid');
+  const today = new Date();
+
+  // Keep day headers
+  const headers = Array.from(grid.querySelectorAll('.cal-dh'));
+  grid.innerHTML = '';
+  headers.forEach(h => grid.appendChild(h));
+
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  const first = new Date(y, m, 1);
+  const last  = new Date(y, m+1, 0);
+  const startDow = first.getDay();
+
+  // Leading days
+  for (let i = 0; i < startDow; i++) {
+    grid.appendChild(mkDay(new Date(y, m, -startDow+i+1), true, false));
+  }
+  // Current month
+  for (let d = 1; d <= last.getDate(); d++) {
+    const date = new Date(y, m, d);
+    grid.appendChild(mkDay(date, false, date.toDateString()===today.toDateString()));
+  }
+  // Trailing
+  const trailing = (7 - (startDow + last.getDate()) % 7) % 7;
+  for (let i = 1; i <= trailing; i++) grid.appendChild(mkDay(new Date(y, m+1, i), true, false));
+}
+
+function mkDay(date, other, isToday) {
+  const cell = document.createElement('div');
+  cell.className = 'cal-day'+(other?' other':'')+(isToday?' today':'');
+  const num = document.createElement('div');
+  num.className = 'cal-day-num';
+  num.textContent = date.getDate();
+  cell.appendChild(num);
+
+  const ds = date.toISOString().split('T')[0];
+  const tasks = S.tasks.filter(t => t.dueDate === ds);
+  tasks.slice(0,3).forEach(t => {
+    const p = document.createElement('div');
+    p.className = `cal-task-pill pill-${t.status}`;
+    p.textContent = t.title;
+    p.title = t.title;
+    cell.appendChild(p);
+  });
+  if (tasks.length > 3) {
+    const m = document.createElement('div');
+    m.style.cssText = 'font-size:.6rem;color:var(--text-muted);padding:0 2px';
+    m.textContent = `+${tasks.length-3} more`;
+    cell.appendChild(m);
+  }
+  return cell;
+}
+
+function drawUpcoming() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const items = S.tasks
+    .filter(t => t.dueDate && t.status !== 'done')
+    .map(t => ({ ...t, _d: new Date(t.dueDate) }))
+    .filter(t => t._d >= today)
+    .sort((a,b) => a._d-b._d)
+    .slice(0,12);
+
+  const el = document.getElementById('upcoming-list');
+  if (!items.length) {
+    el.innerHTML = '<p style="font-size:.78rem;color:var(--text-muted);text-align:center;padding:18px 0">No upcoming deadlines.</p>';
+    return;
+  }
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  el.innerHTML = items.map(t => `
+    <div class="upcoming-item">
+      <div class="up-badge">
+        <div class="up-day">${t._d.getDate()}</div>
+        <div class="up-month">${t._d.toLocaleDateString('en-US',{month:'short'})}</div>
+      </div>
+      <div class="up-info">
+        <h4>${esc(t.title)}</h4>
+        <p>${t.tag ? esc(t.tag)+' · ' : ''}${days[t._d.getDay()]}</p>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  RACING PAGE
+// ═══════════════════════════════════════════════
+function loadRacing() { loadF1(); loadIndyCar(); }
+
+// ─── Formula 1 — Jolpi/Ergast mirror ────────────
+async function loadF1() {
+  const body = document.getElementById('f1-body');
+  body.innerHTML = spin();
+  try {
+    const [sdRes, schRes] = await Promise.all([
+      fetch('https://api.jolpi.ca/ergast/f1/current/driverStandings.json'),
+      fetch('https://api.jolpi.ca/ergast/f1/current.json')
+    ]);
+    const sd  = await sdRes.json();
+    const sch = await schRes.json();
+
+    const standings = sd.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+    const races     = sch.MRData.RaceTable.Races || [];
+    const today     = new Date();
+    const next      = races.find(r => new Date(r.date) >= today);
+
+    document.getElementById('f1-rname').textContent = next ? next.raceName : 'Season Complete';
+    document.getElementById('f1-rdate').textContent = next
+      ? new Date(next.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : '';
+
+    body.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Pos</th><th>Driver</th><th>Constructor</th><th>Pts</th><th>W</th></tr></thead>
+        <tbody>
+          ${standings.slice(0,20).map(s => `
+            <tr>
+              <td class="pos-n">${s.position}</td>
+              <td style="font-weight:500">${esc(s.Driver.givenName)} ${esc(s.Driver.familyName)}</td>
+              <td style="color:var(--text-muted);font-size:.72rem">${esc(s.Constructors[0]?.name||'')}</td>
+              <td class="pts-n">${s.points}</td>
+              <td style="color:var(--text-muted)">${s.wins}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">Via Ergast · <a href="https://www.formula1.com/en/results/2026/drivers" target="_blank">F1.com ↗</a></div>`;
+  } catch(e) {
+    document.getElementById('f1-rname').textContent = 'API unavailable';
+    document.getElementById('f1-rdate').textContent = '';
+    body.innerHTML = errMsg('https://www.formula1.com/en/results/2026/drivers','F1.com');
+  }
+}
+
+// ─── IndyCar — ESPN API with multi-path parsing ──
+const IC_ARROW = ["O'Ward","Rossi","Rosenqvist"];  // last-name fragments for Arrow McLaren
+
+async function loadIndyCar() {
+  const body = document.getElementById('ic-body');
+  body.innerHTML = spin();
+  try {
+    // ESPN IRL standings + scoreboard in parallel
+    const [stRes, scRes] = await Promise.all([
+      fetch('https://site.web.api.espn.com/apis/v2/sports/racing/irl/standings?limit=50').then(r=>r.json()),
+      fetch('https://site.api.espn.com/apis/site/v2/sports/racing/irl/scoreboard').then(r=>r.json())
+    ]);
+
+    // ── Next event from scoreboard ──
+    const today  = new Date();
+    const events = scRes.events || [];
+    const next   = events.find(e => new Date(e.date) >= today) || events[events.length-1];
+    if (next) {
+      document.getElementById('ic-rname').textContent = next.shortName || next.name || 'TBD';
+      const city = next.competitions?.[0]?.venue?.address?.city || '';
+      const d    = new Date(next.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      document.getElementById('ic-rdate').textContent = city ? `${d} · ${city}` : d;
+    }
+
+    // ── Parse standings — ESPN can nest data differently ──
+    // Try each known path until we find entries
+    const raw = stRes;
+    const entries =
+      raw.standings?.entries ||
+      raw.children?.[0]?.standings?.entries ||
+      raw.standings?.groups?.[0]?.standings?.entries ||
+      raw.groups?.[0]?.standings?.entries ||
+      [];
+
+    if (!entries.length) throw new Error('no entries');
+
+    const rows = entries.map((e, i) => {
+      // ESPN racing: driver inside team.athletes[0].athlete
+      const ath    = e.team?.athletes?.[0]?.athlete || e.athlete || {};
+      const name   = ath.displayName || ath.fullName || `Driver ${i+1}`;
+      const team   = e.team?.displayName || e.team?.name || '';
+      // Points stat — try several field name variants ESPN uses
+      const ptsStat = (e.stats||[]).find(s =>
+        s.name==='points' || s.name==='pts' ||
+        s.shortDisplayName==='PTS' || s.abbreviation==='PTS'
+      );
+      const pts    = ptsStat?.displayValue || ptsStat?.value || '—';
+      const isArrow = IC_ARROW.some(frag => name.includes(frag));
+      return { pos: i+1, name, team, pts, isArrow };
+    });
+
+    body.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Pts</th></tr></thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr class="${r.isArrow?'row-arrow':''}">
+              <td class="pos-n">${r.pos}</td>
+              <td style="font-weight:500">${esc(r.name)}${r.isArrow?'<span class="tag-arrow">Arrow McLaren</span>':''}</td>
+              <td style="color:var(--text-muted);font-size:.72rem">${r.isArrow?'':esc(r.team)}</td>
+              <td class="pts-n">${r.pts}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">Via ESPN · <a href="https://www.indycar.com/Standings" target="_blank">indycar.com ↗</a></div>`;
+  } catch(err) {
+    // Fallback: show static roster with live points link
+    document.getElementById('ic-rname').textContent = 'indycar.com';
+    document.getElementById('ic-rdate').textContent = 'Live data unavailable';
+    const ARROW_FULL = ["Pato O'Ward","Alexander Rossi","Felix Rosenqvist"];
+    const roster = [
+      {name:"Scott Dixon",       team:"Chip Ganassi Racing"},
+      {name:"Will Power",        team:"Team Penske"},
+      {name:"Pato O'Ward",       team:"Arrow McLaren"},
+      {name:"Josef Newgarden",   team:"Team Penske"},
+      {name:"Marcus Ericsson",   team:"Andretti Global"},
+      {name:"Alexander Rossi",   team:"Arrow McLaren"},
+      {name:"Colton Herta",      team:"Andretti Global"},
+      {name:"Felix Rosenqvist",  team:"Arrow McLaren"},
+      {name:"Kyle Kirkwood",     team:"Andretti Global"},
+      {name:"Graham Rahal",      team:"Rahal Letterman Lanigan"},
+    ];
+    body.innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Driver</th><th>Team</th></tr></thead>
+        <tbody>
+          ${roster.map(r => {
+            const isA = ARROW_FULL.includes(r.name);
+            return `<tr class="${isA?'row-arrow':''}">
+              <td style="font-weight:500">${esc(r.name)}${isA?'<span class="tag-arrow">Arrow McLaren</span>':''}</td>
+              <td style="color:var(--text-muted);font-size:.72rem">${isA?'':esc(r.team)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">⚠️ ESPN standings unavailable. <a href="https://www.indycar.com/Standings" target="_blank">View live standings ↗</a></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  GOLF PAGE
+// ═══════════════════════════════════════════════
+function getOddsKey()    { return localStorage.getItem('oddsApiKey') || ''; }
+function toggleOddsKey() {
+  const row = document.getElementById('odds-key-row');
+  row.classList.toggle('open');
+  if (row.classList.contains('open')) {
+    document.getElementById('odds-key-input').value = getOddsKey();
+    setTimeout(() => document.getElementById('odds-key-input').focus(), 50);
+  }
+}
+function saveOddsKey() {
+  const k = document.getElementById('odds-key-input').value.trim();
+  if (!k) return;
+  localStorage.setItem('oddsApiKey', k);
+  document.getElementById('odds-key-row').classList.remove('open');
+  loadGolf();
+}
+function clearOddsKey() {
+  localStorage.removeItem('oddsApiKey');
+  document.getElementById('odds-key-input').value = '';
+  document.getElementById('odds-key-row').classList.remove('open');
+  loadGolf();
+}
+
+async function loadGolf() {
+  document.getElementById('owgr-body').innerHTML  = spin();
+  document.getElementById('odds-body').innerHTML  = spin();
+  document.getElementById('pga-ename').textContent = 'Loading…';
+  document.getElementById('pga-edate').textContent = '';
+
+  const oddsKey = getOddsKey();
+
+  // Fetch all three in parallel
+  const [espn, owgrRaw, oddsRaw] = await Promise.all([
+    // ESPN schedule → next event info
+    fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard')
+      .then(r=>r.json()).catch(()=>null),
+    // ESPN world golf rankings
+    fetch('https://site.web.api.espn.com/apis/v2/sports/golf/rankings?limit=50')
+      .then(r=>r.json()).catch(()=>null),
+    // The Odds API — golf outright winner market
+    oddsKey
+      ? fetch(`https://api.the-odds-api.com/v4/sports/golf_pga_tournament_winner/odds?apiKey=${encodeURIComponent(oddsKey)}&regions=us&markets=outrights&oddsFormat=american&bookmakers=draftkings,fanduel,betmgm,caesars,pointsbet`)
+          .then(r=>r.json()).catch(()=>null)
+      : Promise.resolve(null)
+  ]);
+
+  // ── Next event banner from ESPN ──────────────
+  let nextEventName = '';
+  try {
+    const today  = new Date();
+    const events = espn?.events || [];
+    // prefer in-progress, then upcoming, then most recent
+    const evt =
+      events.find(e => {
+        const c = e.competitions?.[0];
+        return new Date(c?.startDate||e.date) <= today && today <= new Date(c?.endDate||e.date);
+      }) ||
+      events.find(e => new Date(e.competitions?.[0]?.startDate||e.date) >= today) ||
+      events[0];
+
+    if (evt) {
+      nextEventName = evt.name || evt.shortName || '';
+      const comp = evt.competitions?.[0];
+      const sd   = new Date(comp?.startDate || evt.date);
+      const ed   = new Date(comp?.endDate   || evt.date);
+      const fmt  = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      const dates = sd.toDateString() === ed.toDateString()
+        ? `${fmt(sd)}, ${sd.getFullYear()}`
+        : `${fmt(sd)} – ${fmt(ed)}, ${ed.getFullYear()}`;
+      const v = comp?.venue;
+      const loc = [v?.fullName, v?.address?.city
+        ? v.address.city + (v.address.state ? ', '+v.address.state : '')
+        : ''].filter(Boolean).join(' — ');
+
+      document.getElementById('pga-ename').textContent = nextEventName || 'PGA Tour';
+      document.getElementById('pga-edate').textContent = [dates, loc].filter(Boolean).join(' · ');
+    } else {
+      document.getElementById('pga-ename').textContent = 'No upcoming event found';
+    }
+  } catch(e) {
+    document.getElementById('pga-ename').textContent = 'See PGATour.com';
+  }
+
+  // ── OWGR panel ────────────────────────────────
+  const owgrBody = document.getElementById('owgr-body');
+  try {
+    // ESPN returns rankings under different paths; try each
+    const entries =
+      owgrRaw?.rankings?.entries ||
+      owgrRaw?.standings?.entries ||
+      owgrRaw?.children?.[0]?.standings?.entries ||
+      [];
+
+    if (!entries.length) throw new Error('no data');
+
+    owgrBody.innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr><th>Rank</th><th>Chg</th><th>Player</th><th>Country</th><th title="Average points">Pts Avg</th></tr>
+        </thead>
+        <tbody>
+          ${entries.slice(0,30).map((e,i) => {
+            const ath  = e.athlete || {};
+            const name = ath.displayName || ath.fullName || '—';
+            const ctry = ath.flag?.alt || ath.citizenship || '—';
+            const rank = e.rank || i+1;
+            const prev = e.previousRank || rank;
+            const chg  = prev - rank;
+            const pts  = (e.stats||[]).find(s=>s.name==='points'||s.name==='avg'||s.abbreviation==='AVG')?.displayValue || '—';
+            const chgStr = chg > 0 ? `<span style="color:var(--green)">▲${chg}</span>`
+                         : chg < 0 ? `<span style="color:var(--red)">▼${Math.abs(chg)}</span>`
+                         : '<span style="color:var(--text-muted)">—</span>';
+            return `<tr>
+              <td class="pos-n">${rank}</td>
+              <td style="font-size:.72rem">${chgStr}</td>
+              <td style="font-weight:500">${esc(name)}</td>
+              <td style="color:var(--text-muted);font-size:.72rem">${esc(ctry)}</td>
+              <td style="color:var(--text-muted);font-size:.75rem">${esc(String(pts))}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">Via ESPN · <a href="https://www.owgr.com/ranking" target="_blank">owgr.com ↗</a></div>`;
+  } catch(e) {
+    owgrBody.innerHTML = `<div style="padding:20px 16px;text-align:center;font-size:.78rem;color:var(--text-muted)">
+      Could not load rankings.<br>
+      <a href="https://www.owgr.com/ranking" target="_blank" style="color:var(--blue)">View on OWGR.com ↗</a>
+    </div>`;
+  }
+
+  // ── Odds panel ────────────────────────────────
+  const oddsBody = document.getElementById('odds-body');
+  if (!oddsKey) {
+    oddsBody.innerHTML = `<div style="padding:22px 18px;font-size:.8rem;line-height:1.9;color:var(--text-muted)">
+      Win odds for the next PGA Tour event, pulled live from DraftKings, FanDuel &amp; more.<br><br>
+      Get a <strong style="color:var(--text-primary)">free key</strong> (500 req/month) at
+      <a href="https://the-odds-api.com" target="_blank" style="color:var(--blue)">the-odds-api.com</a>,
+      then click <strong style="color:var(--text-primary)">🎲 Odds Key</strong> above to enter it.
+    </div>`;
+    return;
+  }
+
+  // oddsRaw is array of events; pick the one matching our next event or just use [0]
+  try {
+    if (!Array.isArray(oddsRaw) || !oddsRaw.length) throw new Error('no odds');
+
+    // Match to next PGA event by name if possible, else use first
+    const evt = oddsRaw.find(e =>
+      nextEventName && e.sport_title?.toLowerCase().includes(nextEventName.toLowerCase().split(' ')[0])
+    ) || oddsRaw[0];
+
+    const evtDate = evt.commence_time
+      ? new Date(evt.commence_time).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : '';
+
+    // Aggregate odds across bookmakers: take best (lowest) American price per player
+    const bestOdds = {};  // name → lowest price (most favorable to bettor = highest payout)
+    const bookUsed = new Set();
+    for (const bm of (evt.bookmakers||[])) {
+      bookUsed.add(bm.title);
+      const market = bm.markets?.find(m=>m.key==='outrights');
+      for (const o of (market?.outcomes||[])) {
+        if (!(o.name in bestOdds) || o.price > bestOdds[o.name]) {
+          bestOdds[o.name] = o.price;
+        }
+      }
+    }
+
+    // Sort by price ascending (favorites first: lower positive = bigger fav, negatives first)
+    const sorted = Object.entries(bestOdds)
+      .sort((a,b) => {
+        // Negatives (favorites) sort before positives; more negative = bigger fav
+        const av = a[1] < 0 ? a[1] : a[1] + 10000;
+        const bv = b[1] < 0 ? b[1] : b[1] + 10000;
+        return av - bv;
+      })
+      .slice(0, 25);
+
+    const books = Array.from(bookUsed).join(', ');
+
+    oddsBody.innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th title="Best American odds across books">Best Odds</th>
+            <th title="Implied win probability">Win %</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(([name, price], i) => {
+            const impliedPct = price < 0
+              ? ((-price / (-price + 100)) * 100).toFixed(1)
+              : ((100 / (price + 100)) * 100).toFixed(1);
+            const priceStr = price > 0 ? `+${price}` : String(price);
+            const isFav    = price < 0;
+            return `<tr>
+              <td class="pos-n">${i+1}</td>
+              <td style="font-weight:500">${esc(name)}</td>
+              <td class="pts-n" style="color:${isFav?'var(--green)':'var(--text-primary)'}">${priceStr}</td>
+              <td style="color:var(--text-muted);font-size:.74rem">${impliedPct}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">${evtDate ? evtDate+' · ' : ''}Best odds across: ${esc(books)}</div>`;
+  } catch(e) {
+    oddsBody.innerHTML = `<div style="padding:20px 16px;text-align:center;font-size:.78rem;color:var(--text-muted)">
+      No odds available for the next event yet.<br>Check back closer to the tournament.
+    </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  BASEBALL PAGE
+// ═══════════════════════════════════════════════
+async function loadBaseball() {
+  const body = document.getElementById('mlb-body');
+  body.innerHTML = spin();
+  try {
+    const year = new Date().getFullYear();
+    const res  = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103&season=${year}&standingsTypes=regularSeason&hydrate=team`);
+    const data = await res.json();
+
+    const alEast = data.records.find(r => r.division?.id === 201);
+    if (!alEast) throw new Error('division not found');
+
+    document.getElementById('mlb-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+    body.innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr><th></th><th>Team</th><th>W</th><th>L</th><th>PCT</th><th>GB</th><th>Home</th><th>Away</th><th>Strk</th><th>L10</th></tr>
+        </thead>
+        <tbody>
+          ${alEast.teamRecords.map((t,i) => {
+            const isRed  = t.team.name.includes('Red Sox');
+            const streak = t.streak?.streakCode || '—';
+            const l10r   = t.records?.splitRecords?.find(s=>s.type==='lastTen');
+            const homer  = t.records?.splitRecords?.find(s=>s.type==='home');
+            const awayr  = t.records?.splitRecords?.find(s=>s.type==='away');
+            const l10    = l10r  ? `${l10r.wins}-${l10r.losses}` : '—';
+            const home   = homer ? `${homer.wins}-${homer.losses}` : '—';
+            const away   = awayr ? `${awayr.wins}-${awayr.losses}` : '—';
+            const gb     = !t.gamesBack || t.gamesBack==='-' ? '—' : t.gamesBack;
+            return `<tr class="${isRed?'row-sox':''}">
+              <td style="font-size:.9rem">${isRed?'🧦':''}</td>
+              <td><span class="tn">${esc(t.team.teamName)}</span></td>
+              <td class="pts-n">${t.wins}</td>
+              <td>${t.losses}</td>
+              <td>${parseFloat(t.winningPercentage).toFixed(3)}</td>
+              <td style="color:var(--text-muted)">${gb}</td>
+              <td style="color:var(--text-muted);font-size:.75rem">${home}</td>
+              <td style="color:var(--text-muted);font-size:.75rem">${away}</td>
+              <td style="color:${streak.startsWith('W')?'var(--green)':'var(--red)'}">${streak}</td>
+              <td style="color:var(--text-muted)">${l10}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="sport-note">Via MLB Stats API · <a href="https://www.mlb.com/standings" target="_blank">mlb.com ↗</a></div>`;
+  } catch(e) {
+    body.innerHTML = errMsg('https://www.mlb.com/standings','MLB.com');
+  }
+}
+
+// shared helpers
+function spin() { return '<div class="spinner-wrap"><div class="spin"></div>Loading…</div>'; }
+function errMsg(url, label) {
+  return `<div class="spinner-wrap" style="flex-direction:column;gap:6px">
+    <span style="font-size:.78rem;color:var(--text-muted)">Could not load data.</span>
+    <a href="${url}" target="_blank" style="color:var(--blue);font-size:.78rem">View on ${label} ↗</a>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  BACKLOG
+// ═══════════════════════════════════════════════
+function renderBacklog() {
+  const el = document.getElementById('backlog-list');
+  if (!S.backlog.length) {
+    el.innerHTML = `<div class="backlog-empty">
+      <h3>No archived weeks yet</h3>
+      <p>Close a week from the Board to archive completed tasks here.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = S.backlog.map(w => `
+    <div class="week-arc" id="wa-${w.id}">
+      <div class="arc-hd" onclick="toggleArc('${w.id}')">
+        <div>
+          <h3>${esc(w.label)}</h3>
+          <div class="arc-meta">${fmtShort(w.weekStart)} – ${fmtShort(w.weekEnd)} · ${w.tasks.length} task${w.tasks.length!==1?'s':''} completed</div>
+        </div>
+        <span class="arc-chevron">›</span>
+      </div>
+      <div class="arc-body">
+        ${w.tasks.map(t => `
+          <div class="arc-task">
+            <div class="check-icon">
+              <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h4>${esc(t.title)}</h4>
+              <p>${t.tag?esc(t.tag):''}${t.dueDate?(t.tag?' · ':'')+'Due '+fmtShort(t.dueDate):''}</p>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleArc(id) {
+  document.getElementById('wa-'+id).classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+load();
+
+// Seed sample tasks on first run
+if (S.tasks.length === 0) {
+  const t = new Date();
+  const add = n => { const d=new Date(t); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; };
+  S.tasks = [
+    { id:uid(), title:'Read Chapter 5 — Research Methods', description:'Focus on quantitative analysis sections', dueDate:add(2), priority:'high',   tag:'Research Methods', status:'todo',       created:t.toISOString() },
+    { id:uid(), title:'Submit Literature Review Draft',     description:'',                                    dueDate:add(5), priority:'high',   tag:'Thesis',           status:'inprogress', created:t.toISOString() },
+    { id:uid(), title:'Problem Set 3',                       description:'Chapters 7–9 exercises',              dueDate:add(3), priority:'medium', tag:'Statistics',       status:'inprogress', created:t.toISOString() },
+    { id:uid(), title:'Peer Review — Group Paper',           description:'',                                    dueDate:add(4), priority:'medium', tag:'Seminar',          status:'review',     created:t.toISOString() },
+    { id:uid(), title:'Weekly Reading Response',             description:'',                                    dueDate:add(1), priority:'low',    tag:'Core Seminar',     status:'done',       created:t.toISOString() },
+  ];
+  save();
+}
+
+renderKanban();
+</script>
+</body>
+</html>
