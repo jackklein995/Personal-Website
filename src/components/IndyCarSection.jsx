@@ -1,151 +1,156 @@
 import { useState, useEffect } from 'react'
 
-const SPORTSDB_BASE = 'https://www.thesportsdb.com/api/v1/json/3'
+// Arrow McLaren 2025 drivers
+const ARROW_MCLAREN = ['O\'Ward', 'Lundgaard', 'Siegel', 'McLaren']
+
+function isArrowMcLaren(name = '') {
+  return ARROW_MCLAREN.some(d => name.toLowerCase().includes(d.toLowerCase()))
+}
+
+// ESPN proxied via Vite dev server
+const ESPN = '/espn/apis/site/v2/sports/racing/irl'
 
 export default function IndyCarSection() {
-  const [teams, setTeams] = useState([])
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [activeTab, setActiveTab] = useState('results')
+  const [standings, setStandings] = useState([])
+  const [nextRace, setNextRace]   = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(false)
 
   useEffect(() => {
     Promise.all([
-      fetch(`${SPORTSDB_BASE}/search_all_teams.php?l=IndyCar`).then(r => r.json()),
-      // IndyCar Series league ID in TheSportsDB is 4370
-      fetch(`${SPORTSDB_BASE}/eventsseason.php?id=4370&s=2024`).then(r => r.json()),
+      fetch(`${ESPN}/standings`).then(r => r.json()),
+      fetch(`${ESPN}/scoreboard`).then(r => r.json()),
     ])
-      .then(([teamsData, eventsData]) => {
-        setTeams(teamsData.teams || [])
-        const allEvents = eventsData.events || []
-        // Sort by date descending for recent results
-        const sorted = allEvents
-          .filter(e => e.strDate)
-          .sort((a, b) => new Date(b.strDate) - new Date(a.strDate))
-        setEvents(sorted)
+      .then(([standData, boardData]) => {
+        // Parse standings — ESPN racing standings shape
+        const entries =
+          standData?.standings?.entries ||
+          standData?.children?.[0]?.standings?.entries ||
+          []
+        setStandings(entries)
+
+        // Find next race — first event whose date is in the future
+        const events = boardData?.events || []
+        const now = new Date()
+        const next = events.find(e => new Date(e.date) >= now) || events[0] || null
+        setNextRace(next)
+
         setLoading(false)
       })
-      .catch(() => {
-        setError(true)
-        setLoading(false)
-      })
+      .catch(() => { setError(true); setLoading(false) })
   }, [])
 
-  const now = new Date()
-  const recentResults = events.filter(e => new Date(e.strDate) < now).slice(0, 8)
-  const upcomingRaces = events.filter(e => new Date(e.strDate) >= now).slice(0, 8)
+  if (loading) return <div className="text-slate-600 text-sm text-center py-12">Loading…</div>
+  if (error)   return <div className="text-red-400 text-sm text-center py-12">Failed to load IndyCar data.</div>
 
   return (
-    <section>
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-2xl">🏁</span>
-        <h2 className="text-2xl font-bold text-white">IndyCar Series</h2>
-      </div>
-
-      {loading && <div className="text-gray-500 py-8 text-center">Loading IndyCar data...</div>}
-      {error && <div className="text-red-400 py-8 text-center">Failed to load IndyCar data.</div>}
-
-      {!loading && !error && (
-        <>
-          {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            {['results', 'upcoming', 'teams'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-                  activeTab === tab
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+    <div className="space-y-6">
+      {/* Next race */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        {!nextRace ? (
+          <p className="text-slate-500 text-sm">No upcoming races found.</p>
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Next Race</p>
+              <p className="text-sm font-semibold text-slate-100">
+                {nextRace.name || nextRace.shortName}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {nextRace.competitions?.[0]?.venue?.fullName || ''}
+              </p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-semibold text-slate-200">
+                {nextRace.date
+                  ? new Date(nextRace.date).toLocaleDateString('en-US', {
+                      weekday: 'short', month: 'short', day: 'numeric',
+                    })
+                  : '—'}
+              </p>
+            </div>
           </div>
-
-          {activeTab === 'results' && (
-            <div className="space-y-2">
-              {recentResults.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No recent results available.</p>
-              ) : (
-                recentResults.map(event => (
-                  <EventRow key={event.idEvent} event={event} />
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === 'upcoming' && (
-            <div className="space-y-2">
-              {upcomingRaces.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No upcoming races available.</p>
-              ) : (
-                upcomingRaces.map(event => (
-                  <EventRow key={event.idEvent} event={event} upcoming />
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === 'teams' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teams.length === 0 ? (
-                <p className="text-gray-500">No team data available.</p>
-              ) : (
-                teams.map(team => (
-                  <TeamCard key={team.idTeam} team={team} />
-                ))
-              )}
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  )
-}
-
-function EventRow({ event, upcoming }) {
-  const dateStr = event.strDate
-    ? new Date(event.strDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-    : '—'
-
-  return (
-    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-900 border rounded-xl px-4 py-3 ${upcoming ? 'border-indigo-800/50' : 'border-gray-800'}`}>
-      <div>
-        <p className="text-white font-medium text-sm">{event.strEvent}</p>
-        <p className="text-gray-500 text-xs mt-0.5">{event.strVenue || event.strLeague}</p>
-      </div>
-      <div className="flex items-center gap-3 text-xs">
-        {event.intHomeScore != null && event.intAwayScore != null && (
-          <span className="text-gray-300 font-mono bg-gray-800 px-2 py-1 rounded">
-            {event.intHomeScore} – {event.intAwayScore}
-          </span>
         )}
-        <span className={`px-2 py-1 rounded-full ${upcoming ? 'bg-indigo-900/50 text-indigo-400' : 'bg-gray-800 text-gray-500'}`}>
-          {dateStr}
-        </span>
       </div>
-    </div>
-  )
-}
 
-function TeamCard({ team }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-4">
-      {team.strTeamBadge ? (
-        <img
-          src={team.strTeamBadge}
-          alt={team.strTeam}
-          className="w-12 h-12 object-contain rounded"
-        />
-      ) : (
-        <div className="w-12 h-12 bg-gray-800 rounded flex items-center justify-center text-gray-600 text-xl">🏎</div>
-      )}
-      <div>
-        <p className="text-white font-semibold text-sm">{team.strTeam}</p>
-        {team.strCountry && <p className="text-gray-500 text-xs mt-0.5">{team.strCountry}</p>}
+      {/* Arrow McLaren legend */}
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
+        <p className="text-xs text-slate-500">Arrow McLaren drivers highlighted</p>
       </div>
+
+      {/* Standings */}
+      {standings.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center">
+          <p className="text-slate-400 text-sm mb-1">Standings data unavailable right now.</p>
+          <p className="text-slate-600 text-xs">
+            Live standings at{' '}
+            <a
+              href="https://www.espn.com/racing/standings/_/series/irl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              ESPN IndyCar
+            </a>
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p className="text-xs text-slate-600 uppercase tracking-wider font-semibold mb-3">
+            Driver Standings
+          </p>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-left w-8">Pos</th>
+                  <th className="px-4 py-2.5 text-left">Driver</th>
+                  <th className="px-4 py-2.5 text-right hidden sm:table-cell">Wins</th>
+                  <th className="px-4 py-2.5 text-right">Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((entry, i) => {
+                  const name = entry.athlete?.displayName || entry.team?.displayName || `Driver ${i + 1}`
+                  const stats = entry.stats || []
+                  const get = (n) => stats.find(s => s.name === n || s.displayName === n)?.displayValue ?? '—'
+                  const rank = get('rank') !== '—' ? get('rank') : i + 1
+                  const pts  = get('points')
+                  const wins = get('wins')
+                  const amcl = isArrowMcLaren(name) ||
+                    isArrowMcLaren(entry.team?.displayName || '') ||
+                    isArrowMcLaren(entry.athlete?.team?.displayName || '')
+
+                  return (
+                    <tr
+                      key={entry.athlete?.id || i}
+                      className={`border-b border-slate-800/60 transition-colors ${
+                        amcl ? 'bg-orange-950/25' : 'hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 text-slate-600 text-xs tabular-nums">{rank}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          {amcl && <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />}
+                          <span className={`font-medium ${amcl ? 'text-orange-200' : 'text-slate-200'}`}>
+                            {name}
+                          </span>
+                        </div>
+                        {entry.team?.displayName && (
+                          <p className="text-xs text-slate-600 mt-0.5 ml-3.5">{entry.team.displayName}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-500 tabular-nums hidden sm:table-cell">{wins}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-200 tabular-nums">{pts}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

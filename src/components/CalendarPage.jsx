@@ -1,191 +1,168 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
-import { enUS } from 'date-fns/locale/en-US'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
+import { useState, useEffect } from 'react'
+import {
+  format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
+  addDays, addMonths, subMonths, isSameMonth, isSameDay, isToday, parseISO,
+} from 'date-fns'
 import { supabase } from '../supabaseClient'
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales: { 'en-US': enUS },
-})
+const STATUS_CHIP = {
+  todo:        'bg-gray-100 text-gray-600',
+  in_progress: 'bg-blue-50 text-blue-700',
+  review:      'bg-amber-50 text-amber-700',
+  done:        'bg-green-50 text-green-700',
+  archived:    'bg-gray-50 text-gray-400',
+}
+
+function buildCalendarDays(month) {
+  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
+  const end   = endOfWeek(endOfMonth(month), { weekStartsOn: 0 })
+  const days = []
+  let cur = start
+  while (cur <= end) { days.push(cur); cur = addDays(cur, 1) }
+  return days
+}
 
 export default function CalendarPage() {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // { type: 'add', start, end } | { type: 'delete', event }
-  const [newTitle, setNewTitle] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [month, setMonth]       = useState(new Date())
+  const [cards, setCards]       = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    fetchEvents()
+    supabase
+      .from('kanban_cards')
+      .select('*')
+      .not('due_date', 'is', null)
+      .order('due_date', { ascending: true })
+      .then(({ data }) => { setCards(data || []); setLoading(false) })
   }, [])
 
-  async function fetchEvents() {
-    const { data, error } = await supabase.from('calendar_events').select('*')
-    if (!error && data) {
-      setEvents(
-        data.map(e => ({
-          id: e.id,
-          title: e.title,
-          start: new Date(e.start_time),
-          end: new Date(e.end_time),
-          description: e.description || '',
-        }))
-      )
-    }
-    setLoading(false)
-  }
-
-  const handleSelectSlot = useCallback(({ start, end }) => {
-    setNewTitle('')
-    setModal({ type: 'add', start, end })
-  }, [])
-
-  const handleSelectEvent = useCallback(event => {
-    setModal({ type: 'delete', event })
-  }, [])
-
-  async function handleAddEvent() {
-    if (!newTitle.trim()) return
-    setSaving(true)
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert({
-        title: newTitle.trim(),
-        start_time: modal.start.toISOString(),
-        end_time: modal.end.toISOString(),
-        description: '',
-      })
-      .select()
-      .single()
-
-    if (!error && data) {
-      setEvents(prev => [
-        ...prev,
-        {
-          id: data.id,
-          title: data.title,
-          start: new Date(data.start_time),
-          end: new Date(data.end_time),
-          description: data.description || '',
-        },
-      ])
-    }
-    setSaving(false)
-    setModal(null)
-  }
-
-  async function handleDeleteEvent() {
-    setSaving(true)
-    const { error } = await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('id', modal.event.id)
-
-    if (!error) {
-      setEvents(prev => prev.filter(e => e.id !== modal.event.id))
-    }
-    setSaving(false)
-    setModal(null)
-  }
+  const days = buildCalendarDays(month)
+  const cardsForDay = (day) => cards.filter(c => c.due_date && isSameDay(parseISO(c.due_date), day))
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-white mb-2">Weekly Calendar</h1>
-      <p className="text-gray-400 mb-6 text-sm">
-        Click a day or time slot to add an event. Click an event to delete it.
-      </p>
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-lg font-semibold text-gray-900">Calendar</h1>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setMonth(m => subMonths(m, 1))}
+            className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setMonth(new Date())}
+            className="px-3 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            Today
+          </button>
+          <span className="text-gray-800 font-medium text-sm w-32 text-center">
+            {format(month, 'MMMM yyyy')}
+          </span>
+          <button
+            onClick={() => setMonth(m => addMonths(m, 1))}
+            className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-96 text-gray-500">
-          Loading events...
-        </div>
+        <div className="text-gray-400 text-sm text-center py-20">Loading…</div>
       ) : (
-        <div className="rbc-dark">
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: 640 }}
-            selectable
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-7 mb-1">
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+              <div key={d} className="text-center text-xs text-gray-400 font-medium py-1.5">{d}</div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
+            {days.map(day => {
+              const dayCards = cardsForDay(day)
+              const inMonth  = isSameMonth(day, month)
+              const today    = isToday(day)
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  onClick={() => dayCards.length > 0 && setSelected({ day, cards: dayCards })}
+                  className={`min-h-24 p-2 flex flex-col gap-1 transition-colors ${
+                    inMonth ? 'bg-white' : 'bg-gray-50'
+                  } ${dayCards.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                >
+                  <span className={`text-xs font-medium self-start w-6 h-6 flex items-center justify-center rounded-full ${
+                    today ? 'bg-blue-600 text-white' : inMonth ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    {format(day, 'd')}
+                  </span>
+                  <div className="flex flex-col gap-0.5 overflow-hidden">
+                    {dayCards.slice(0, 3).map(card => (
+                      <div
+                        key={card.id}
+                        className={`text-xs px-1.5 py-0.5 rounded truncate ${STATUS_CHIP[card.status] || STATUS_CHIP.todo}`}
+                        title={card.title}
+                      >
+                        {card.title}
+                      </div>
+                    ))}
+                    {dayCards.length > 3 && (
+                      <span className="text-xs text-gray-400 pl-1">+{dayCards.length - 3} more</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex flex-wrap gap-4 mt-4">
+            {Object.entries({ 'To Do': STATUS_CHIP.todo, 'In Progress': STATUS_CHIP.in_progress, 'Review': STATUS_CHIP.review, 'Done': STATUS_CHIP.done, 'Archived': STATUS_CHIP.archived })
+              .map(([label, cls]) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={`w-3 h-3 rounded-sm ${cls.split(' ')[0]}`} />
+                  <span className="text-xs text-gray-400">{label}</span>
+                </div>
+              ))}
+          </div>
+        </>
       )}
 
-      {/* Add Event Modal */}
-      {modal?.type === 'add' && (
+      {selected && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-          onClick={e => e.target === e.currentTarget && setModal(null)}
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+          onClick={e => e.target === e.currentTarget && setSelected(null)}
         >
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h2 className="text-xl font-semibold text-white mb-1">Add Event</h2>
-            <p className="text-gray-500 text-sm mb-5">
-              {format(modal.start, 'EEEE, MMMM d, yyyy')}
-            </p>
-            <input
-              type="text"
-              placeholder="Event title"
-              value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddEvent()}
-              autoFocus
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 mb-5 transition-colors"
-            />
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setModal(null)}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddEvent}
-                disabled={saving || !newTitle.trim()}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium"
-              >
-                {saving ? 'Saving...' : 'Add Event'}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-900">
+                {format(selected.day, 'EEEE, MMMM d')}
+              </h2>
+              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Event Modal */}
-      {modal?.type === 'delete' && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-          onClick={e => e.target === e.currentTarget && setModal(null)}
-        >
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h2 className="text-xl font-semibold text-white mb-2">Delete Event?</h2>
-            <p className="text-gray-400 mb-1">
-              <span className="font-medium text-white">"{modal.event.title}"</span>
-            </p>
-            <p className="text-gray-500 text-sm mb-6">
-              {format(modal.event.start, 'EEEE, MMMM d, yyyy')}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setModal(null)}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteEvent}
-                disabled={saving}
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-lg transition-colors text-sm font-medium"
-              >
-                {saving ? 'Deleting...' : 'Delete'}
-              </button>
+            <div className="space-y-2">
+              {selected.cards.map(card => (
+                <div key={card.id} className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-sm text-gray-800 font-medium leading-snug">{card.title}</p>
+                    <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${STATUS_CHIP[card.status] || STATUS_CHIP.todo}`}>
+                      {card.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  {card.description && (
+                    <p className="text-xs text-gray-500 leading-relaxed">{card.description}</p>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
