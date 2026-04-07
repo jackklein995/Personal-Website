@@ -7,6 +7,7 @@ const links = [
   { to: '/backlog',  label: 'Backlog'  },
   { to: '/calendar', label: 'Calendar' },
   { to: '/sports',   label: 'Sports'   },
+  { to: '/todo',     label: 'To Do'    },
 ]
 
 export default function Navbar() {
@@ -17,7 +18,7 @@ export default function Navbar() {
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#080f1e]/90 border-b border-slate-800/60 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center h-14">
           <div className="hidden sm:flex items-center gap-0.5">
@@ -27,8 +28,8 @@ export default function Navbar() {
                 to={to}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   active(to)
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-slate-800/70 text-slate-200 border border-slate-700/50'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
                 }`}
               >
                 {label}
@@ -37,7 +38,7 @@ export default function Navbar() {
           </div>
 
           <button
-            className="sm:hidden text-gray-400 hover:text-gray-700 p-1.5"
+            className="sm:hidden text-slate-500 hover:text-slate-300 p-1.5"
             onClick={() => setMenuOpen(o => !o)}
             aria-label="Toggle menu"
           >
@@ -52,7 +53,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div className="sm:hidden bg-white border-t border-gray-100 px-3 pb-3 space-y-0.5">
+        <div className="sm:hidden bg-[#080f1e]/90 border-t border-slate-800/60 px-3 pb-3 space-y-0.5">
           {links.map(({ to, label }) => (
             <Link
               key={to}
@@ -60,8 +61,8 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 active(to)
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-slate-800/70 text-slate-200'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
               }`}
             >
               {label}

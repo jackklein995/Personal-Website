@@ -15,23 +15,23 @@ const STATUS_LABELS = {
 }
 
 const STATUS_DOT = {
-  todo:        'bg-gray-400',
-  in_progress: 'bg-blue-500',
-  review:      'bg-amber-500',
-  done:        'bg-green-500',
+  todo:        'bg-slate-600',
+  in_progress: 'bg-blue-500/70',
+  review:      'bg-amber-500/70',
+  done:        'bg-emerald-500/70',
 }
 
 const STATUS_TEXT = {
-  todo:        'text-gray-500',
-  in_progress: 'text-blue-600',
-  review:      'text-amber-600',
-  done:        'text-green-600',
+  todo:        'text-slate-500',
+  in_progress: 'text-blue-400/80',
+  review:      'text-amber-400/80',
+  done:        'text-emerald-400/80',
 }
 
 const STATUS_COUNT_COLOR = {
-  todo:        'text-gray-700',
-  in_progress: 'text-blue-600',
-  review:      'text-amber-600',
+  todo:        'text-slate-400',
+  in_progress: 'text-blue-400/80',
+  review:      'text-amber-400/80',
 }
 
 const NAV_CARDS = [
@@ -79,6 +79,17 @@ const NAV_CARDS = [
       </svg>
     ),
   },
+  {
+    to: '/todo',
+    label: 'To Do',
+    desc: 'Quick task list — add items, check them off.',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Home() {
@@ -102,84 +113,97 @@ export default function Home() {
   })).filter(s => s.count > 0)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14">
-
-      {/* Date + greeting */}
-      <div className="mb-8">
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-1">
-          {format(now, 'EEEE, MMMM d, yyyy')}
-        </p>
-        <p className="text-gray-500 text-sm">{greeting}</p>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Subtle background depth */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[32rem] h-[32rem] bg-blue-900/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -right-32 w-80 h-80 bg-slate-800/20 rounded-full blur-3xl" />
       </div>
 
-      {/* Widgets */}
-      {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-          {/* Open items */}
-          <div className="bg-white border border-gray-200 rounded-xl px-5 py-4">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">Open Items</p>
-            {activeCards.length === 0 ? (
-              <p className="text-sm text-gray-400">Nothing open — all clear.</p>
-            ) : statusCounts.length === 0 ? (
-              <p className="text-sm text-gray-500">{activeCards.length} items in Done</p>
-            ) : (
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
-                {statusCounts.map(({ status, count }) => (
-                  <div key={status} className="flex items-baseline gap-1.5">
-                    <span className={`text-2xl font-semibold tabular-nums ${STATUS_COUNT_COLOR[status]}`}>
-                      {count}
-                    </span>
-                    <span className="text-xs text-gray-400">{STATUS_LABELS[status]}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      <div className="relative max-w-4xl mx-auto px-4 py-10 sm:py-16">
 
-          {/* Due today */}
-          <Link
-            to="/board"
-            className="group bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-gray-300 hover:shadow-sm transition-all"
-          >
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">Due Today</p>
-            {dueToday.length === 0 ? (
-              <p className="text-sm text-gray-400">Nothing due today.</p>
-            ) : (
-              <ul className="space-y-2">
-                {dueToday.map(card => (
-                  <li key={card.id} className="flex items-center gap-2 min-w-0">
-                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[card.status]}`} />
-                    <span className="text-sm text-gray-700 truncate flex-1">{card.title}</span>
-                    <span className={`text-xs flex-shrink-0 ${STATUS_TEXT[card.status]}`}>
-                      {STATUS_LABELS[card.status]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Link>
+        {/* Greeting */}
+        <div className="mb-10">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-3">
+            {format(now, 'EEEE, MMMM d, yyyy')}
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-200 mb-2">
+            {greeting}, Jack.
+          </h1>
+          <p className="text-slate-500 text-sm">Here's what's on your plate today.</p>
+          <div className="mt-5 h-px w-12 bg-blue-700/60 rounded-full" />
         </div>
-      )}
 
-      {/* Nav cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {NAV_CARDS.map(({ to, label, desc, icon }) => (
-          <Link
-            key={to}
-            to={to}
-            className="group flex items-start gap-3.5 bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-150"
-          >
-            <div className="mt-0.5 p-1.5 bg-gray-100 rounded-lg text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700 transition-colors flex-shrink-0">
-              {icon}
+        {/* Widgets */}
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            {/* Open items */}
+            <div className="bg-[#0c1a2e]/70 border border-slate-700/40 rounded-xl px-5 py-5">
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-4">Open Items</p>
+              {activeCards.length === 0 ? (
+                <p className="text-sm text-slate-600">Nothing open — all clear.</p>
+              ) : statusCounts.length === 0 ? (
+                <p className="text-sm text-slate-500">{activeCards.length} items in Done</p>
+              ) : (
+                <div className="flex flex-wrap gap-x-6 gap-y-3">
+                  {statusCounts.map(({ status, count }) => (
+                    <div key={status} className="flex items-baseline gap-1.5">
+                      <span className={`text-2xl font-semibold tabular-nums ${STATUS_COUNT_COLOR[status]}`}>
+                        {count}
+                      </span>
+                      <span className="text-xs text-slate-600">{STATUS_LABELS[status]}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-800 mb-0.5 group-hover:text-gray-900 transition-colors">
-                {label}
-              </p>
-              <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
-            </div>
-          </Link>
-        ))}
+
+            {/* Due today */}
+            <Link
+              to="/board"
+              className="group bg-[#0c1a2e]/70 border border-slate-700/40 rounded-xl px-5 py-5 hover:border-slate-600/60 transition-all duration-200"
+            >
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-4">Due Today</p>
+              {dueToday.length === 0 ? (
+                <p className="text-sm text-slate-600">Nothing due today.</p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {dueToday.map(card => (
+                    <li key={card.id} className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[card.status]}`} />
+                      <span className="text-sm text-slate-400 truncate flex-1">{card.title}</span>
+                      <span className={`text-xs flex-shrink-0 ${STATUS_TEXT[card.status]}`}>
+                        {STATUS_LABELS[card.status]}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Link>
+          </div>
+        )}
+
+        {/* Nav cards */}
+        <p className="text-xs text-slate-600 font-medium uppercase tracking-widest mb-3">Navigate</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {NAV_CARDS.map(({ to, label, desc, icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex items-start gap-3 bg-[#0c1a2e]/70 border border-slate-700/40 rounded-xl p-4 hover:border-slate-600/60 hover:bg-[#0e1f35]/80 transition-all duration-200"
+            >
+              <div className="mt-0.5 p-1.5 bg-slate-800/60 border border-slate-700/40 rounded-lg text-slate-500 group-hover:text-slate-300 group-hover:border-slate-600/60 transition-colors flex-shrink-0">
+                {icon}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-300 mb-0.5 group-hover:text-slate-200 transition-colors">
+                  {label}
+                </p>
+                <p className="text-xs text-slate-600 leading-relaxed group-hover:text-slate-500 transition-colors">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
