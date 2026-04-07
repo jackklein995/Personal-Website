@@ -261,6 +261,7 @@ export default function BoardPage() {
         .insert({ title, description, status, due_date, week_start: format(weekMonday(), 'yyyy-MM-dd') })
         .select().single()
       if (!error && data) setCards(prev => [...prev, data])
+      if (error) { alert('Error adding card: ' + error.message); return }
     } else {
       const { error } = await supabase
         .from('kanban_cards')
