@@ -3,10 +3,10 @@ import { format, startOfWeek, addDays, isToday, isSameDay, parseISO } from 'date
 import { supabase } from '../supabaseClient'
 
 const COLUMNS = [
-  { id: 'todo',        label: 'To Do',      accent: 'border-slate-600'    },
-  { id: 'in_progress', label: 'In Progress', accent: 'border-blue-500/60'  },
-  { id: 'review',      label: 'Review',      accent: 'border-amber-500/60' },
-  { id: 'done',        label: 'Done',        accent: 'border-emerald-500/60' },
+  { id: 'todo',        label: 'To Do',      accent: 'border-slate-600',     bg: 'bg-[#0c1a2e]/60'           },
+  { id: 'in_progress', label: 'In Progress', accent: 'border-blue-500/60',   bg: 'bg-blue-950/40'            },
+  { id: 'review',      label: 'Review',      accent: 'border-amber-500/60',  bg: 'bg-amber-950/30'           },
+  { id: 'done',        label: 'Done',        accent: 'border-emerald-500/60', bg: 'bg-emerald-950/30'        },
 ]
 
 const STATUS_CHIP = {
@@ -30,6 +30,7 @@ function weekMonday() {
 // ─── Card Modal ───────────────────────────────────────────────────────────────
 function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose }) {
   const [title, setTitle]           = useState(initialCard?.title || '')
+  const [topic, setTopic]           = useState(initialCard?.topic || '')
   const [desc, setDesc]             = useState(initialCard?.description || '')
   const [dueDate, setDueDate]       = useState(initialCard?.due_date || '')
   const [status, setStatus]         = useState(initialCard?.status || initialStatus || 'todo')
@@ -54,7 +55,7 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
   async function handleSave() {
     if (!title.trim()) return
     setSaving(true)
-    await onSave({ title: title.trim(), description: desc.trim(), due_date: dueDate || null, status })
+    await onSave({ title: title.trim(), topic: topic.trim(), description: desc.trim(), due_date: dueDate || null, status })
     setSaving(false)
   }
 
@@ -106,6 +107,18 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
               onChange={e => setTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
               placeholder="Card title"
+              className="w-full bg-[#080f1e] border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-700 focus:outline-none focus:border-slate-600 transition-colors"
+            />
+          </div>
+
+          {/* Topic */}
+          <div>
+            <label className="text-xs text-slate-600 font-medium mb-1.5 block">Topic</label>
+            <input
+              type="text"
+              value={topic}
+              onChange={e => setTopic(e.target.value)}
+              placeholder="e.g. Frontend, Infra, Design…"
               className="w-full bg-[#080f1e] border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-700 focus:outline-none focus:border-slate-600 transition-colors"
             />
           </div>
@@ -254,20 +267,20 @@ export default function BoardPage() {
     setLoading(false)
   }
 
-  async function handleSave({ title, description, due_date, status }) {
+  async function handleSave({ title, topic, description, due_date, status }) {
     if (modal.mode === 'add') {
       const { data, error } = await supabase
         .from('kanban_cards')
-        .insert({ title, description, status, due_date, week_start: format(weekMonday(), 'yyyy-MM-dd') })
+        .insert({ title, topic, description, status, due_date, week_start: format(weekMonday(), 'yyyy-MM-dd') })
         .select().single()
       if (!error && data) setCards(prev => [...prev, data])
       if (error) { alert('Error adding card: ' + error.message); return }
     } else {
       const { error } = await supabase
         .from('kanban_cards')
-        .update({ title, description, due_date, status })
+        .update({ title, topic, description, due_date, status })
         .eq('id', modal.card.id)
-      if (!error) setCards(prev => prev.map(c => c.id === modal.card.id ? { ...c, title, description, due_date, status } : c))
+      if (!error) setCards(prev => prev.map(c => c.id === modal.card.id ? { ...c, title, topic, description, due_date, status } : c))
     }
     setModal(null)
   }
@@ -330,7 +343,7 @@ export default function BoardPage() {
               return (
                 <div
                   key={col.id}
-                  className={`flex flex-col rounded-xl bg-[#0c1a2e]/60 border border-slate-700/40 border-t-2 ${col.accent} min-h-48`}
+                  className={`flex flex-col rounded-xl ${col.bg} border border-slate-700/40 border-t-2 ${col.accent} min-h-48`}
                   onDragOver={onDragOver}
                   onDrop={e => onDrop(e, col.id)}
                 >
@@ -456,15 +469,15 @@ function KanbanCard({ card, columns, onDragStart, onMove, onClick }) {
     <div
       draggable
       onDragStart={e => { e.stopPropagation(); onDragStart(e, card.id) }}
-      className="group bg-[#080f1e]/70 border border-slate-800/60 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-slate-700/60 transition-all"
+      className="group bg-[#0f1f35] border border-slate-700/60 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-slate-600/70 hover:bg-[#111f35] transition-all"
     >
       <div className="cursor-pointer" onClick={onClick}>
-        <p className="text-sm text-slate-400 leading-snug font-medium">{card.title}</p>
-        {card.description && (
-          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed line-clamp-2">{card.description}</p>
+        <p className="text-sm text-slate-300 leading-snug font-medium">{card.title}</p>
+        {card.topic && (
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{card.topic}</p>
         )}
         {card.due_date && (
-          <p className="text-xs text-slate-700 mt-1.5">Due {format(parseISO(card.due_date), 'MMM d')}</p>
+          <p className="text-xs text-slate-600 mt-1.5">Due {format(parseISO(card.due_date), 'MMM d')}</p>
         )}
       </div>
 
@@ -472,7 +485,7 @@ function KanbanCard({ card, columns, onDragStart, onMove, onClick }) {
         {idx > 0 && (
           <button
             onClick={e => { e.stopPropagation(); onMove(card.id, columns[idx - 1].id) }}
-            className="text-xs text-slate-600 hover:text-slate-400 px-1.5 py-0.5 bg-slate-800/60 hover:bg-slate-800 rounded transition-colors border border-slate-700/40"
+            className="text-xs text-slate-500 hover:text-slate-300 px-1.5 py-0.5 bg-slate-800/80 hover:bg-slate-700/80 rounded transition-colors border border-slate-700/50"
           >
             ← {columns[idx - 1].label}
           </button>
@@ -480,7 +493,7 @@ function KanbanCard({ card, columns, onDragStart, onMove, onClick }) {
         {idx < columns.length - 1 && (
           <button
             onClick={e => { e.stopPropagation(); onMove(card.id, columns[idx + 1].id) }}
-            className="text-xs text-slate-600 hover:text-slate-400 px-1.5 py-0.5 bg-slate-800/60 hover:bg-slate-800 rounded transition-colors ml-auto border border-slate-700/40"
+            className="text-xs text-slate-500 hover:text-slate-300 px-1.5 py-0.5 bg-slate-800/80 hover:bg-slate-700/80 rounded transition-colors ml-auto border border-slate-700/50"
           >
             {columns[idx + 1].label} →
           </button>
