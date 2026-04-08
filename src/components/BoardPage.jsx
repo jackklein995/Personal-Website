@@ -23,6 +23,18 @@ const STATUS_DOT = {
   done:        'bg-emerald-500/70',
 }
 
+const PRIORITY_DOT = {
+  high:   'bg-red-500/70',
+  medium: 'bg-amber-500/50',
+  low:    'bg-slate-600/70',
+}
+
+const PRIORITY_LABEL = {
+  high:   'High',
+  medium: 'Medium',
+  low:    'Low',
+}
+
 function weekMonday() {
   return startOfWeek(new Date(), { weekStartsOn: 1 })
 }
@@ -32,6 +44,7 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
   const [title, setTitle]           = useState(initialCard?.title || '')
   const [topic, setTopic]           = useState(initialCard?.topic || '')
   const [desc, setDesc]             = useState(initialCard?.description || '')
+  const [priority, setPriority]     = useState(initialCard?.priority || 'medium')
   const [dueDate, setDueDate]       = useState(initialCard?.due_date || '')
   const [status, setStatus]         = useState(initialCard?.status || initialStatus || 'todo')
   const [comments, setComments]     = useState([])
@@ -55,7 +68,7 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
   async function handleSave() {
     if (!title.trim()) return
     setSaving(true)
-    await onSave({ title: title.trim(), topic: topic.trim(), description: desc.trim(), due_date: dueDate || null, status })
+    await onSave({ title: title.trim(), topic: topic.trim(), description: desc.trim(), priority, due_date: dueDate || null, status })
     setSaving(false)
   }
 
@@ -135,8 +148,8 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
             />
           </div>
 
-          {/* Due date + Status */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Due date + Status + Priority */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-slate-600 font-medium mb-1.5 block">Due Date</label>
               <input
@@ -156,6 +169,18 @@ function CardModal({ mode, initialCard, initialStatus, onSave, onDelete, onClose
                 {COLUMNS.map(c => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-600 font-medium mb-1.5 block">Priority</label>
+              <select
+                value={priority}
+                onChange={e => setPriority(e.target.value)}
+                className="w-full bg-[#080f1e] border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-400 focus:outline-none focus:border-slate-600 transition-colors"
+              >
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </select>
             </div>
           </div>
@@ -267,20 +292,20 @@ export default function BoardPage() {
     setLoading(false)
   }
 
-  async function handleSave({ title, topic, description, due_date, status }) {
+  async function handleSave({ title, topic, description, priority, due_date, status }) {
     if (modal.mode === 'add') {
       const { data, error } = await supabase
         .from('kanban_cards')
-        .insert({ title, topic, description, status, due_date, week_start: format(weekMonday(), 'yyyy-MM-dd') })
+        .insert({ title, topic, description, priority, status, due_date, week_start: format(weekMonday(), 'yyyy-MM-dd') })
         .select().single()
       if (!error && data) setCards(prev => [...prev, data])
       if (error) { alert('Error adding card: ' + error.message); return }
     } else {
       const { error } = await supabase
         .from('kanban_cards')
-        .update({ title, topic, description, due_date, status })
+        .update({ title, topic, description, priority, due_date, status })
         .eq('id', modal.card.id)
-      if (!error) setCards(prev => prev.map(c => c.id === modal.card.id ? { ...c, title, topic, description, due_date, status } : c))
+      if (!error) setCards(prev => prev.map(c => c.id === modal.card.id ? { ...c, title, topic, description, priority, due_date, status } : c))
     }
     setModal(null)
   }
@@ -472,7 +497,12 @@ function KanbanCard({ card, columns, onDragStart, onMove, onClick }) {
       className="group bg-[#0f1f35] border border-slate-700/60 rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-slate-600/70 hover:bg-[#111f35] transition-all"
     >
       <div className="cursor-pointer" onClick={onClick}>
-        <p className="text-sm text-slate-300 leading-snug font-medium">{card.title}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm text-slate-300 leading-snug font-medium">{card.title}</p>
+          {card.priority && card.priority !== 'medium' && (
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${PRIORITY_DOT[card.priority]}`} title={PRIORITY_LABEL[card.priority]} />
+          )}
+        </div>
         {card.topic && (
           <p className="text-xs text-slate-500 mt-1 leading-relaxed">{card.topic}</p>
         )}

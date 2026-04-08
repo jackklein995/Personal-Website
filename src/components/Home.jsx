@@ -34,6 +34,46 @@ const STATUS_COUNT_COLOR = {
   review:      'text-amber-400/80',
 }
 
+// WMO weather code → label + emoji
+function weatherInfo(code) {
+  if (code === 0)                    return { label: 'Clear',         icon: '☀️' }
+  if (code === 1)                    return { label: 'Mostly Clear',  icon: '🌤️' }
+  if (code === 2)                    return { label: 'Partly Cloudy', icon: '⛅' }
+  if (code === 3)                    return { label: 'Overcast',      icon: '☁️' }
+  if ([45, 48].includes(code))       return { label: 'Foggy',         icon: '🌫️' }
+  if ([51, 53, 55].includes(code))   return { label: 'Drizzle',       icon: '🌦️' }
+  if ([61, 63, 65].includes(code))   return { label: 'Rain',          icon: '🌧️' }
+  if ([71, 73, 75, 77].includes(code)) return { label: 'Snow',        icon: '❄️' }
+  if ([80, 81, 82].includes(code))   return { label: 'Showers',       icon: '🌧️' }
+  if ([95, 96, 99].includes(code))   return { label: 'Thunderstorm',  icon: '⛈️' }
+  return { label: 'Unknown', icon: '🌡️' }
+}
+
+function useWeather() {
+  const [weather, setWeather] = useState(null)
+
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const { latitude: lat, longitude: lon } = coords
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m&temperature_unit=fahrenheit&windspeed_unit=mph`
+        )
+        const data = await res.json()
+        const c = data.current
+        setWeather({
+          temp:  Math.round(c.temperature_2m),
+          code:  c.weathercode,
+          wind:  Math.round(c.windspeed_10m),
+        })
+      } catch {}
+    }, () => {})
+  }, [])
+
+  return weather
+}
+
 const NAV_CARDS = [
   {
     to: '/board',
@@ -71,7 +111,7 @@ const NAV_CARDS = [
   {
     to: '/sports',
     label: 'Sports',
-    desc: 'F1 standings, MLB, and golf rankings.',
+    desc: 'F1 standings and MLB.',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -95,6 +135,7 @@ const NAV_CARDS = [
 export default function Home() {
   const [cards, setCards]     = useState([])
   const [loading, setLoading] = useState(true)
+  const weather               = useWeather()
 
   useEffect(() => {
     supabase
@@ -112,6 +153,8 @@ export default function Home() {
     count: activeCards.filter(c => c.status === s).length,
   })).filter(s => s.count > 0)
 
+  const wInfo = weather ? weatherInfo(weather.code) : null
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Subtle background depth */}
@@ -122,16 +165,28 @@ export default function Home() {
 
       <div className="relative max-w-4xl mx-auto px-4 py-10 sm:py-16">
 
-        {/* Greeting */}
-        <div className="mb-10">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-3">
-            {format(now, 'EEEE, MMMM d, yyyy')}
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-200 mb-2">
-            {greeting}, Jack.
-          </h1>
-          <p className="text-slate-500 text-sm">Here's what's on your plate today.</p>
-          <div className="mt-5 h-px w-12 bg-blue-700/60 rounded-full" />
+        {/* Greeting + Weather */}
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-3">
+              {format(now, 'EEEE, MMMM d, yyyy')}
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-200 mb-2">
+              {greeting}, Jack.
+            </h1>
+            <p className="text-slate-500 text-sm">Here's what's on your plate today.</p>
+            <div className="mt-5 h-px w-12 bg-blue-700/60 rounded-full" />
+          </div>
+
+          {/* Weather widget */}
+          {wInfo && (
+            <div className="flex-shrink-0 bg-[#0c1a2e]/70 border border-slate-700/40 rounded-xl px-4 py-3 text-right min-w-[110px]">
+              <p className="text-2xl leading-none mb-1">{wInfo.icon}</p>
+              <p className="text-xl font-semibold text-slate-300 tabular-nums">{weather.temp}°F</p>
+              <p className="text-xs text-slate-500 mt-0.5">{wInfo.label}</p>
+              <p className="text-xs text-slate-700 mt-0.5">{weather.wind} mph</p>
+            </div>
+          )}
         </div>
 
         {/* Widgets */}
