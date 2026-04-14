@@ -41,7 +41,7 @@ function ProjectModal({ project, onSave, onDelete, onClose }) {
     >
       <div className="bg-[#0c1823] border border-slate-700/50 rounded-2xl w-full max-w-lg shadow-2xl">
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-800/60">
-          <h2 className="text-sm font-semibold text-slate-300">{isEdit ? 'Edit Project' : 'New Project'}</h2>
+          <h2 className="text-sm font-semibold text-slate-300">{isEdit ? 'Edit Goal' : 'New Goal'}</h2>
           <button onClick={onClose} className="text-slate-600 hover:text-slate-400 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -59,7 +59,7 @@ function ProjectModal({ project, onSave, onDelete, onClose }) {
               value={title}
               onChange={e => setTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
-              placeholder="Project or goal name"
+              placeholder="Goal name"
               className="w-full bg-[#080f1e] border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-300 placeholder-slate-700 focus:outline-none focus:border-slate-600 transition-colors"
             />
           </div>
@@ -145,7 +145,7 @@ function ProjectModal({ project, onSave, onDelete, onClose }) {
               disabled={saving || !title.trim()}
               className="px-4 py-1.5 bg-blue-700/70 hover:bg-blue-600/70 disabled:opacity-40 text-slate-200 text-sm font-medium rounded-lg transition-colors border border-blue-600/30"
             >
-              {saving ? 'Saving…' : isEdit ? 'Save' : 'Add Project'}
+              {saving ? 'Saving…' : isEdit ? 'Save' : 'Add Goal'}
             </button>
           </div>
         </div>
@@ -277,8 +277,8 @@ export default function ProjectsPage() {
         <div className="flex items-start justify-between mb-10">
           <div>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-3">Planning</p>
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-200">Projects</h1>
-            <p className="text-slate-500 text-sm mt-2">Overarching goals and longer-horizon work.</p>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-200">Projects & Goals</h1>
+            <p className="text-slate-500 text-sm mt-2">Long term projects, goals, and broader initiatives.</p>
             <div className="mt-5 h-px w-12 bg-blue-700/60 rounded-full" />
           </div>
           <button
@@ -326,14 +326,14 @@ export default function ProjectsPage() {
               </svg>
             </div>
             <p className="text-slate-600 text-sm">
-              {filter === 'all' ? 'No projects yet.' : `No ${filter} projects.`}
+              {filter === 'all' ? 'No goals yet.' : `No ${filter} goals.`}
             </p>
             {filter === 'all' && (
               <button
                 onClick={() => setModal({ project: null })}
                 className="mt-3 text-xs text-slate-500 hover:text-slate-300 transition-colors"
               >
-                Add your first project →
+                Add your first goal →
               </button>
             )}
           </div>

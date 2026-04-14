@@ -7,7 +7,7 @@ const links = [
   { to: '/backlog',  label: 'Backlog'  },
   { to: '/calendar', label: 'Calendar' },
   { to: '/sports',   label: 'Sports'   },
-  { to: '/projects', label: 'Projects' },
+  { to: '/goals', label: 'Projects & Goals' },
 ]
 
 export default function Navbar() {

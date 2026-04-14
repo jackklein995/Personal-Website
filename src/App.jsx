@@ -5,7 +5,7 @@ import BoardPage from './components/BoardPage'
 import BacklogPage from './components/BacklogPage'
 import SportsPage from './components/SportsPage'
 import CalendarPage from './components/CalendarPage'
-import ProjectsPage from './components/ProjectsPage'
+import GoalsPage from './components/ProjectsPage'
 
 function App() {
   return (
@@ -19,7 +19,7 @@ function App() {
             <Route path="/backlog"  element={<BacklogPage />} />
             <Route path="/sports"   element={<SportsPage />}  />
             <Route path="/calendar" element={<CalendarPage />}/>
-            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
           </Routes>
         </div>
       </div>

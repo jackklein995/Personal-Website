@@ -120,9 +120,9 @@ const NAV_CARDS = [
     ),
   },
   {
-    to: '/projects',
-    label: 'Projects',
-    desc: 'Overarching goals and longer-horizon work.',
+    to: '/goals',
+    label: 'Projects & Goals',
+    desc: 'Long term projects, goals, and broader initiatives.',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
